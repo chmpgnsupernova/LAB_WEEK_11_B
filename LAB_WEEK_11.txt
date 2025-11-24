@@ -1,0 +1,40 @@
+1. When a user takes a picture, that picture is stored in a path based on the given URI. In which part of the code handles this?
+
+Jawaban:
+Bagian kode yang menangani pembuatan URI dan path file terletak di file ProviderFileManager.kt, khususnya di dalam fungsi generatePhotoUri:
+
+fun generatePhotoUri(time: Long): FileInfo {
+    val name = "img_$time.jpg"
+    val file = File(
+        context.getExternalFilesDir(fileHelper.getPicturesFolder()),
+        name
+    )
+    return FileInfo(
+        fileHelper.getUriFromFile(file),
+        file,
+        name,
+        fileHelper.getPicturesFolder(),
+        "image/jpeg"
+    )
+}
+
+2. In your FileInfo.kt, there are 5 attributes. On the first attribute, what does the URI refer to? And on the fourth attribute, what does relativePath refer to?
+
+Jawaban:
+- URI (atribut pertama) merujuk pada Content URI yang dihasilkan oleh FileProvider. Ini berfungsi sebagai "token akses sementara" yang aman, yang memungkinkan aplikasi kamera eksternal untuk menyimpan hasil foto ke lokasi spesifik di dalam penyimpanan aplikasi kita tanpa membuka akses ke seluruh sistem file.
+- relativePath (atribut keempat) merujuk pada alamat folder di dalam Shared Storage (seperti folder "Pictures/" atau "Movies/"). Atribut ini digunakan agar file foto atau video tersebut dapat terorganisir dengan rapi dan dapat dideteksi (di-index) oleh aplikasi Galeri bawaan (MediaStore).
+
+3. [Bonus] Explain the chronological order from when a user takes a picture until the file is stored in the MediaStore.
+
+Jawaban:
+1. User menekan tombol "Photo" di MainActivity.
+2. Aplikasi melakukan pengecekan izin penyimpanan (Storage Permission).
+3. Jika izin diberikan, fungsi openImageCapture() dipanggil.
+4. Fungsi ProviderFileManager.generatePhotoUri() membuat file sementara di penyimpanan eksternal aplikasi dan menghasilkan URI menggunakan FileProvider.
+5. Aplikasi Kamera bawaan dijalankan melalui takePictureLauncher menggunakan URI tersebut.
+6. User mengambil foto, dan aplikasi Kamera menyimpan hasilnya ke URI yang diberikan, lalu mengembalikan status sukses.
+7. Callback takePictureLauncher di MainActivity menerima sinyal sukses.
+8. Fungsi providerFileManager.insertImageToStore() dipanggil dengan membawa data file foto tadi.
+9. MediaContentHelper membuat ContentValues yang berisi metadata (nama file, tipe mime, dan path folder).
+10. ProviderFileManager menggunakan ContentResolver untuk mendaftarkan file tersebut ke MediaStore (Database Galeri), yang menghasilkan URI tujuan akhir.
+11. Terakhir, IOUtils.copy() menyalin data gambar dari file sementara (FileProvider) ke lokasi akhir di MediaStore agar muncul di Galeri.
